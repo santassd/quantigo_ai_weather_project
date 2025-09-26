@@ -1,103 +1,432 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React from "react";
+import {
+  Box,
+  TextInput,
+  Button,
+  Text,
+  Title,
+  Card,
+  Divider,
+} from "@mantine/core";
+import { IconSun, IconCloud, IconCloudRain } from "@tabler/icons-react";
+import { useWeatherStore } from "@/store/weatherStore";
+import { ForecastData, getCurrentWeather, getForecast } from "@/services/weather";
+
+export default function HomePage() {
+  const { city, setCity, currentWeather, setCurrentWeather, error, setError } =
+    useWeatherStore();
+
+  const renderIcon = (iconName: string) => {
+    switch (iconName) {
+      case "sun":
+        return <IconSun size={24} />;
+      case "cloud":
+        return <IconCloud size={24} />;
+      case "rain":
+        return <IconCloudRain size={24} />;
+      default:
+        return null;
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!city) {
+      setError("Please enter a city");
+      return;
+    }
+
+    try {
+      setError("");
+      const current = await getCurrentWeather(city);
+      const forecast = await getForecast(city);
+
+      const dailyMap: Record<string, ForecastData[]> = {};
+      forecast.forEach((item) => {
+        const date = item.dt_txt.split(" ")[0];
+        if (!dailyMap[date]) dailyMap[date] = [];
+        dailyMap[date].push(item);
+      });
+
+      const dailyForecast = Object.entries(dailyMap)
+        .slice(0, 7)
+        .map(([date, items]) => {
+          const temps = items.map((i) => i.temp);
+          const tempHigh = Math.max(...temps);
+          const tempLow = Math.min(...temps);
+          const mainIcon = items[0].description.toLowerCase().includes("sun")
+            ? "sun"
+            : items[0].description.toLowerCase().includes("cloud")
+            ? "cloud"
+            : "rain";
+
+          return {
+            day: new Date(date).toLocaleDateString("en-US", {
+              weekday: "short",
+            }),
+            tempHigh: `${Math.round(tempHigh)}°`,
+            tempLow: `${Math.round(tempLow)}°`,
+            icon: mainIcon,
+          };
+        });
+
+      const today = new Date().toISOString().split("T")[0];
+      const hourlyForecast = forecast
+        .filter((item) => item.dt_txt.startsWith(today))
+        .map((item) => ({
+          time: new Date(item.dt_txt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          temp: `${Math.round(item.temp)}°`,
+          icon: item.description.toLowerCase().includes("sun")
+            ? "sun"
+            : item.description.toLowerCase().includes("cloud")
+            ? "cloud"
+            : "rain",
+        }));
+
+      setCurrentWeather({
+        location: current.city,
+        country: current.country,
+        date: new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        temperature: `${Math.round(current.temp)}°`,
+        condition: current.description,
+        icon: current.description.toLowerCase().includes("sun")
+          ? "sun"
+          : current.description.toLowerCase().includes("cloud")
+          ? "cloud"
+          : "rain",
+        stats: {
+          feelsLike: `${Math.round(current.feels_like)}°`,
+          humidity: `${current.humidity}%`,
+          wind: `${Math.round(current.wind_speed)} km/h`,
+          precipitation: "0 mm",
+        },
+        dailyForecast,
+        hourlyForecast,
+      });
+    } catch (err) {
+      setError("Failed to fetch weather data. Please check the city name.");
+      console.error(err);
+    }
+  };
+
+  const hasWeatherData = currentWeather.location !== "";
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <Box
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        background: "linear-gradient(135deg, #1e1b4b, #4f46e5)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "2rem 1rem",
+        boxSizing: "border-box",
+      }}
+    >
+      <Box
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          maxWidth: 1280,
+          marginBottom: 4,
+          flexWrap: "wrap",
+          gap: 8,
+        }}
+      >
+        <Title order={3} style={{ color: "#fff", fontWeight: 600 }}>
+          ☀️ Weather Now
+        </Title>
+        <Button
+          style={{
+            backgroundColor: "#4B556380",
+            color: "#fff",
+            borderRadius: 8,
+            height: 22,
+            minWidth: 100,
+          }}
+        >
+          Units ▼
+        </Button>
+      </Box>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <Title
+        order={2}
+        style={{
+          color: "#fff",
+          fontWeight: 300,
+          fontSize: "clamp(24px, 4vw, 36px)",
+          textAlign: "center",
+          marginBottom: 10,
+        }}
+      >
+        How&apos;s the sky looking today?
+      </Title>
+
+<Box
+  style={{
+    display: "flex",
+    width: "100%",
+    maxWidth: 660,
+    gap: 8,
+    marginTop: 28,
+    flexWrap: "wrap",
+  }}
+>
+  <TextInput
+    placeholder="Search for a place..."
+    value={city}
+    onChange={(e) => setCity(e.target.value)}
+    styles={{
+      input: {
+        backgroundColor: "#1F293780",
+        color: "#fff",
+        borderRadius: 8,
+        height: 44,
+        border: "1px solid #4B5563B2",
+        width: "100%", // take full width in mobile
+        paddingLeft: 12,
+        boxSizing: "border-box",
+      },
+    }}
+  />
+
+  <Button
+    onClick={handleSearch}
+    style={{
+      backgroundColor: "#2563EB",
+      height: 44,
+      width: "100%", // full width on mobile
+      maxWidth: 115, // max width for desktop
+      borderRadius: 8,
+      flexShrink: 0,
+      color: "#fff",
+    }}
+  >
+    Search
+  </Button>
+</Box>
+
+      {error && <Text style={{ color: "red", marginBottom: 16 }}>{error}</Text>}
+
+      {!hasWeatherData && (
+        <Text
+          style={{
+            color: "#9CA3AF",
+            marginTop: 82,
+            fontSize: "18px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          🌤️ Search for a city to see weather information
+        </Text>
+      )}
+
+      {hasWeatherData && (
+        <Box
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            maxWidth: 1280,
+            marginTop: 40,
+          }}
+        >
+          <Box
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 24,
+              flexWrap: "wrap",
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            <Box
+              style={{
+                flex: 2,
+                minWidth: 280,
+                display: "flex",
+                flexDirection: "column",
+                gap: 24,
+              }}
+            >
+              <Card
+                style={{
+                  borderRadius: 16,
+                  padding: 24,
+                  background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                  color: "#fff",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: 190,
+                }}
+              >
+                <Box>
+                  <Text size="lg" fw={500}>
+                    {currentWeather.location}, {currentWeather.country}
+                  </Text>
+                  <Text size="sm">{currentWeather.date}</Text>
+                </Box>
+                <Box
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "auto",
+                    marginBottom: 20,
+                  }}
+                >
+                  <Title order={1} style={{ fontSize: "64px", fontWeight: 700 }}>
+                    {currentWeather.temperature}
+                  </Title>
+                </Box>
+              </Card>
+
+              <Box
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                  gap: 24,
+                }}
+              >
+                {Object.entries(currentWeather.stats).map(([label, value]) => (
+                  <Card
+                    key={label}
+                    style={{
+                      background: "#1F293780",
+                      borderRadius: 12,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      padding: 16,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        color: "#9CA3AF",
+                        marginBottom: 8,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {label.replace(/([A-Z])/g, " $1")}
+                    </Text>
+                    <Text
+                      style={{
+                        fontWeight: 500,
+                        fontSize: 22,
+                        lineHeight: "120%",
+                        color: "#fff",
+                      }}
+                    >
+                      {value}
+                    </Text>
+                  </Card>
+                ))}
+              </Box>
+
+              <Box>
+                <Title order={4} style={{ color: "#fff", marginBottom: 16 }}>
+                  Daily forecast
+                </Title>
+                <Box
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(124px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  {currentWeather.dailyForecast.map((d) => (
+                    <Card
+                      key={d.day}
+                      style={{
+                        width: "124px",
+                        height: "125px",
+                        borderRadius: 12,
+                        background: "#1F293780",
+                        color: "#fff",
+                        textAlign: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text fw={500}>{d.day}</Text>
+                      {renderIcon(d.icon)}
+                      <Text size="sm">
+                        {d.tempHigh} / {d.tempLow}
+                      </Text>
+                    </Card>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+
+            <Box style={{ flex: 1, minWidth: 280 }}>
+              <Card
+                style={{
+                  background: "#1F2937aa",
+                  padding: 16,
+                  borderRadius: 16,
+                  color: "#fff",
+                }}
+              >
+                <Box
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <Title order={4}>Hourly forecast</Title>
+                  <Text size="sm" fw={500}>
+                    {currentWeather.date.split(",")[0]}
+                  </Text>
+                </Box>
+
+                <Box style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                  {currentWeather.hourlyForecast.map((h, index) => (
+                    <Box key={h.time} style={{ width: "100%" }}>
+                      <Box
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "4px 0",
+                        }}
+                      >
+                        <Box style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {h.icon ? renderIcon(h.icon) : null}
+                          <Text size="sm">{h.time}</Text>
+                        </Box>
+                        <Text size="sm">{h.temp}</Text>
+                      </Box>
+                      {index !== currentWeather.hourlyForecast.length - 1 && (
+                        <Divider my={0} style={{ backgroundColor: "#4B55634D", height: 1 }} />
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              </Card>
+            </Box>
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 }

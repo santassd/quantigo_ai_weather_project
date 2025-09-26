@@ -1,0 +1,9 @@
+html, body, #__next {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #2b0d3f 0%, #6a1b9a 50%, #1b0e2f 100%);
+  color: #fff;
+  font-family: Inter, system-ui, sans-serif;
+}
