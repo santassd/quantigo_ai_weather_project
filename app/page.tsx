@@ -10,25 +10,28 @@ import {
   Card,
   Divider,
 } from "@mantine/core";
-import { IconSun, IconCloud, IconCloudRain } from "@tabler/icons-react";
 import { useWeatherStore } from "@/store/weatherStore";
-import { ForecastData, getCurrentWeather, getForecast } from "@/services/weather";
+import {
+  ForecastData,
+  getCurrentWeather,
+  getForecast,
+} from "@/services/weather";
 
-export default function HomePage() {
+export default function Page() {
   const { city, setCity, currentWeather, setCurrentWeather, error, setError } =
     useWeatherStore();
 
-  const renderIcon = (iconName: string) => {
-    switch (iconName) {
-      case "sun":
-        return <IconSun size={24} />;
-      case "cloud":
-        return <IconCloud size={24} />;
-      case "rain":
-        return <IconCloudRain size={24} />;
-      default:
-        return null;
-    }
+
+  const renderIcon = (iconCode: string) => {
+    if (!iconCode) return null;
+    const url = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+    return (
+      <img
+        src={url}
+        alt="weather icon"
+        style={{ width: 48, height: 48, objectFit: "contain" }}
+      />
+    );
   };
 
   const handleSearch = async () => {
@@ -42,6 +45,7 @@ export default function HomePage() {
       const current = await getCurrentWeather(city);
       const forecast = await getForecast(city);
 
+    
       const dailyMap: Record<string, ForecastData[]> = {};
       forecast.forEach((item) => {
         const date = item.dt_txt.split(" ")[0];
@@ -55,11 +59,7 @@ export default function HomePage() {
           const temps = items.map((i) => i.temp);
           const tempHigh = Math.max(...temps);
           const tempLow = Math.min(...temps);
-          const mainIcon = items[0].description.toLowerCase().includes("sun")
-            ? "sun"
-            : items[0].description.toLowerCase().includes("cloud")
-            ? "cloud"
-            : "rain";
+          const mainIcon = items[0].icon;
 
           return {
             day: new Date(date).toLocaleDateString("en-US", {
@@ -71,29 +71,25 @@ export default function HomePage() {
           };
         });
 
-const todayDate = new Date();
-const hourlyForecast = forecast
-  .filter((item) => {
-    const itemDate = new Date(item.dt_txt);
-    return (
-      itemDate.getDate() === todayDate.getDate() &&
-      itemDate.getMonth() === todayDate.getMonth() &&
-      itemDate.getFullYear() === todayDate.getFullYear()
-    );
-  })
-  .map((item) => ({
-    time: new Date(item.dt_txt).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    temp: `${Math.round(item.temp)}°`,
-    icon: item.description.toLowerCase().includes("sun")
-      ? "sun"
-      : item.description.toLowerCase().includes("cloud")
-      ? "cloud"
-      : "rain",
-  }));
-
+      
+      const todayDate = new Date();
+      const hourlyForecast = forecast
+        .filter((item) => {
+          const itemDate = new Date(item.dt_txt);
+          return (
+            itemDate.getDate() === todayDate.getDate() &&
+            itemDate.getMonth() === todayDate.getMonth() &&
+            itemDate.getFullYear() === todayDate.getFullYear()
+          );
+        })
+        .map((item) => ({
+          time: new Date(item.dt_txt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          temp: `${Math.round(item.temp)}°`,
+          icon: item.icon,
+        }));
 
       setCurrentWeather({
         location: current.city,
@@ -106,11 +102,7 @@ const hourlyForecast = forecast
         }),
         temperature: `${Math.round(current.temp)}°`,
         condition: current.description,
-        icon: current.description.toLowerCase().includes("sun")
-          ? "sun"
-          : current.description.toLowerCase().includes("cloud")
-          ? "cloud"
-          : "rain",
+        icon: current.icon,
         stats: {
           feelsLike: `${Math.round(current.feels_like)}°`,
           humidity: `${current.humidity}%`,
@@ -141,6 +133,7 @@ const hourlyForecast = forecast
         boxSizing: "border-box",
       }}
     >
+
       <Box
         style={{
           display: "flex",
@@ -169,6 +162,7 @@ const hourlyForecast = forecast
         </Button>
       </Box>
 
+   
       <Title
         order={2}
         style={{
@@ -181,55 +175,56 @@ const hourlyForecast = forecast
       >
         How&apos;s the sky looking today?
       </Title>
-<Box
-  style={{
-    display: "flex",
-    width: "100%",
-    maxWidth: 660,
-    gap: 8,
-    marginTop: 28,
-    flexWrap: "wrap",
-  }}
->
-  <Box style={{ flex: 1, minWidth: 0 }}>
-    <TextInput
-      placeholder="Search for a place..."
-      value={city}
-      onChange={(e) => setCity(e.target.value)}
-      styles={{
-        input: {
-          backgroundColor: "#1F293780",
-          color: "#fff",
-          borderRadius: 8,
-          height: 44,
-          border: "1px solid #4B5563B2",
-          paddingLeft: 28,
-          width: "100%", 
-          boxSizing: "border-box",
-        },
-      }}
-    />
-  </Box>
-
-  <Button
-    onClick={handleSearch}
-    style={{
-      backgroundColor: "#2563EB",
-      height: 44,
-      width: 115, // fixed width
-      borderRadius: 8,
-      flexShrink: 0,
-      color: "#fff",
-    }}
-  >
-    Search
-  </Button>
-</Box>
 
 
+      <Box
+        style={{
+          display: "flex",
+          width: "100%",
+          maxWidth: 660,
+          gap: 8,
+          marginTop: 28,
+          flexWrap: "wrap",
+        }}
+      >
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <TextInput
+            placeholder="Search for a place..."
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            styles={{
+              input: {
+                backgroundColor: "#1F293780",
+                color: "#fff",
+                borderRadius: 8,
+                height: 44,
+                border: "1px solid #4B5563B2",
+                paddingLeft: 28,
+                width: "100%",
+                boxSizing: "border-box",
+              },
+            }}
+          />
+        </Box>
+        <Button
+          onClick={handleSearch}
+          style={{
+            backgroundColor: "#2563EB",
+            height: 44,
+            width: 115,
+            borderRadius: 8,
+            flexShrink: 0,
+            color: "#fff",
+          }}
+        >
+          Search
+        </Button>
+      </Box>
 
+ 
       {error && <Text style={{ color: "red", marginBottom: 16 }}>{error}</Text>}
 
+ 
       {!hasWeatherData && (
         <Text
           style={{
@@ -244,6 +239,7 @@ const hourlyForecast = forecast
           🌤️ Search for a city to see weather information
         </Text>
       )}
+
 
       {hasWeatherData && (
         <Box
@@ -263,6 +259,7 @@ const hourlyForecast = forecast
               flexWrap: "wrap",
             }}
           >
+          
             <Box
               style={{
                 flex: 2,
@@ -272,6 +269,7 @@ const hourlyForecast = forecast
                 gap: 24,
               }}
             >
+        
               <Card
                 style={{
                   borderRadius: 16,
@@ -297,7 +295,10 @@ const hourlyForecast = forecast
                     marginBottom: 20,
                   }}
                 >
-                  <Title order={1} style={{ fontSize: "64px", fontWeight: 700 }}>
+                  <Title
+                    order={1}
+                    style={{ fontSize: "64px", fontWeight: 500 }}
+                  >
                     {currentWeather.temperature}
                   </Title>
                 </Box>
@@ -320,7 +321,7 @@ const hourlyForecast = forecast
                       flexDirection: "column",
                       justifyContent: "space-between",
                       alignItems: "flex-start",
-                      padding: 16,
+                      padding: 10,
                     }}
                   >
                     <Text
@@ -348,30 +349,29 @@ const hourlyForecast = forecast
                 ))}
               </Box>
 
-              <Box>
-                <Title order={4} style={{ color: "#fff", marginBottom: 16 }}>
+              <Box >
+                <Title order={4} style={{ color: "#fff", marginBottom: 18 }}>
                   Daily forecast
                 </Title>
                 <Box
                   style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(124px, 1fr))",
-                    gap: 12,
+                    gap: 8,
                   }}
                 >
                   {currentWeather.dailyForecast.map((d) => (
                     <Card
                       key={d.day}
                       style={{
-                        width: "124px",
-                        height: "125px",
+                        height: "144px",
                         borderRadius: 12,
                         background: "#1F293780",
                         color: "#fff",
                         textAlign: "center",
                         display: "flex",
                         flexDirection: "column",
-                        justifyContent: "center",
+                        justifyContent: "space-between",
                         alignItems: "center",
                       }}
                     >
@@ -386,11 +386,12 @@ const hourlyForecast = forecast
               </Box>
             </Box>
 
+    
             <Box style={{ flex: 1, minWidth: 280 }}>
               <Card
                 style={{
                   background: "#1F2937aa",
-                  padding: 16,
+                  padding: 22,
                   borderRadius: 16,
                   color: "#fff",
                 }}
@@ -409,7 +410,13 @@ const hourlyForecast = forecast
                   </Text>
                 </Box>
 
-                <Box style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                <Box
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                  }}
+                >
                   {currentWeather.hourlyForecast.map((h, index) => (
                     <Box key={h.time} style={{ width: "100%" }}>
                       <Box
@@ -420,14 +427,23 @@ const hourlyForecast = forecast
                           padding: "4px 0",
                         }}
                       >
-                        <Box style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {h.icon ? renderIcon(h.icon) : null}
+                        <Box
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          {renderIcon(h.icon)}
                           <Text size="sm">{h.time}</Text>
                         </Box>
                         <Text size="sm">{h.temp}</Text>
                       </Box>
                       {index !== currentWeather.hourlyForecast.length - 1 && (
-                        <Divider my={0} style={{ backgroundColor: "#4B55634D", height: 1 }} />
+                        <Divider
+                          my={0}
+                          style={{ backgroundColor: "#4B55634D", height: 1 }}
+                        />
                       )}
                     </Box>
                   ))}
