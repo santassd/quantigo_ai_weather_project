@@ -191,31 +191,32 @@ const hourlyForecast = forecast
     flexWrap: "wrap",
   }}
 >
-  <TextInput
-    placeholder="Search for a place..."
-    value={city}
-    onChange={(e) => setCity(e.target.value)}
-    styles={{
-      input: {
-        backgroundColor: "#1F293780",
-        color: "#fff",
-        borderRadius: 8,
-        height: 44,
-        border: "1px solid #4B5563B2",
-        paddingLeft: 28,
-        boxSizing: "border-box",
-        flex: 1, // <-- makes input take remaining space
-        minWidth: 0, // <-- prevents overflow in flex
-      },
-    }}
-  />
+  <Box style={{ flex: 1, minWidth: 0 }}>
+    <TextInput
+      placeholder="Search for a place..."
+      value={city}
+      onChange={(e) => setCity(e.target.value)}
+      styles={{
+        input: {
+          backgroundColor: "#1F293780",
+          color: "#fff",
+          borderRadius: 8,
+          height: 44,
+          border: "1px solid #4B5563B2",
+          paddingLeft: 28,
+          width: "100%", 
+          boxSizing: "border-box",
+        },
+      }}
+    />
+  </Box>
 
   <Button
     onClick={handleSearch}
     style={{
       backgroundColor: "#2563EB",
       height: 44,
-      width: 115, // fixed width for button
+      width: 115, // fixed width
       borderRadius: 8,
       flexShrink: 0,
       color: "#fff",
@@ -224,6 +225,7 @@ const hourlyForecast = forecast
     Search
   </Button>
 </Box>
+
 
 
       {error && <Text style={{ color: "red", marginBottom: 16 }}>{error}</Text>}
