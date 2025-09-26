@@ -71,21 +71,29 @@ export default function HomePage() {
           };
         });
 
-      const today = new Date().toISOString().split("T")[0];
-      const hourlyForecast = forecast
-        .filter((item) => item.dt_txt.startsWith(today))
-        .map((item) => ({
-          time: new Date(item.dt_txt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          temp: `${Math.round(item.temp)}°`,
-          icon: item.description.toLowerCase().includes("sun")
-            ? "sun"
-            : item.description.toLowerCase().includes("cloud")
-            ? "cloud"
-            : "rain",
-        }));
+const todayDate = new Date();
+const hourlyForecast = forecast
+  .filter((item) => {
+    const itemDate = new Date(item.dt_txt);
+    return (
+      itemDate.getDate() === todayDate.getDate() &&
+      itemDate.getMonth() === todayDate.getMonth() &&
+      itemDate.getFullYear() === todayDate.getFullYear()
+    );
+  })
+  .map((item) => ({
+    time: new Date(item.dt_txt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    temp: `${Math.round(item.temp)}°`,
+    icon: item.description.toLowerCase().includes("sun")
+      ? "sun"
+      : item.description.toLowerCase().includes("cloud")
+      ? "cloud"
+      : "rain",
+  }));
+
 
       setCurrentWeather({
         location: current.city,
@@ -173,7 +181,6 @@ export default function HomePage() {
       >
         How&apos;s the sky looking today?
       </Title>
-
 <Box
   style={{
     display: "flex",
@@ -195,9 +202,10 @@ export default function HomePage() {
         borderRadius: 8,
         height: 44,
         border: "1px solid #4B5563B2",
-        width: "100%", // take full width in mobile
-        paddingLeft: 12,
+        paddingLeft: 28,
         boxSizing: "border-box",
+        flex: 1, // <-- makes input take remaining space
+        minWidth: 0, // <-- prevents overflow in flex
       },
     }}
   />
@@ -207,8 +215,7 @@ export default function HomePage() {
     style={{
       backgroundColor: "#2563EB",
       height: 44,
-      width: "100%", // full width on mobile
-      maxWidth: 115, // max width for desktop
+      width: 115, // fixed width for button
       borderRadius: 8,
       flexShrink: 0,
       color: "#fff",
@@ -217,6 +224,7 @@ export default function HomePage() {
     Search
   </Button>
 </Box>
+
 
       {error && <Text style={{ color: "red", marginBottom: 16 }}>{error}</Text>}
 
